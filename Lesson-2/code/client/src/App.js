@@ -2,16 +2,19 @@ import React, { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 
 function App() {
-  const [message, setMessages] = useState([]);
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
-  const [sessionId] = useState(uuidv4());
+  const [sessionId] = useState(uuidv4()); // unique per chat session
 
   const sendMessage = async () => {
-    setMessages([...message, { sender: "user", text: input }]);
+    if (!input.trim()) return;
+
+    // Add user message
+    setMessages([...messages, { sender: "user", text: input }]);
 
     const res = await fetch("http://localhost:5000/api/chat", {
       method: "POST",
-      headers: { "ContentType": "application/json" },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message: input, sessionId }),
     });
 
@@ -23,37 +26,33 @@ function App() {
 
   return (
     <div style={{ padding: "20px", fontFamily: "Arial" }}>
-      <h2>🤖 🧑Gemini Chatbot with Memory</h2>
+      <h2>🤖 Gemini Chatbot with Memory</h2>
+
       <div
         style={{
-          border: "1px solid black",
+          border: "1px solid #ccc",
           padding: "10px",
           height: "400px",
+          overflowY: "scroll",
           marginBottom: "10px",
         }}
       >
-        {message.map((msg) => {
-          return <div>{msg.sender == "user" ? "You:🧑" : "🤖 Bot"}</div>;
-        })}
+        {messages.map((msg, idx) => (
+          <div key={idx} style={{ margin: "5px 0" }}>
+            <b>{msg.sender === "user" ? "🧑 You" : "🤖 Bot"}:</b> {msg.text}
+          </div>
+        ))}
       </div>
 
-      <div>
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          style={{ width: "70%", padding: "10pxs" }}
-          placeholder="Type you message..."
-        />
-      </div>
-
+      <input
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        style={{ width: "70%", padding: "10px" }}
+        placeholder="Type a message..."
+      />
       <button
-        type="submit"
         onClick={sendMessage}
-        style={{
-          padding: "10px 20px",
-          backgroundColor: "teal",
-          color: "white",
-        }}
+        style={{ padding: "10px 20px", marginLeft: "10px" }}
       >
         Send
       </button>
