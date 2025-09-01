@@ -1,0 +1,121 @@
+{
+  "name": "AI To-Do Assistant + Prioritizer",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "assistTask"
+      },
+      "id": "Webhook_Assist",
+      "name": "Webhook (Assist Task)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 150]
+    },
+    {
+      "parameters": {
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSyDfJJ_zOvIH7hs7-Ny3KQWgfhwNEb78Ums",
+        "method": "POST",
+        "sendBody": true,
+        "jsonParameters": true,
+        "bodyParametersJson": "{\n  \"contents\": [\n    {\n      \"role\": \"user\",\n      \"parts\": [\n        {\n          \"text\": \"Task: {{$json.body.task}}\\nReturn JSON with clarifiedTask, subtasks, priority (high|medium|low), estimatedTime (minutes), dueDate, tags, and nextAction.\"\n        }\n      ]\n    }\n  ],\n  \"generationConfig\": { \"responseMimeType\": \"application/json\" }\n}"
+      },
+      "id": "Gemini_Assist",
+      "name": "Gemini API (Assist)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [550, 150]
+    },
+    {
+      "parameters": {
+        "functionCode": "return [{ json: JSON.parse(items[0].json.candidates[0].content.parts[0].text) }];"
+      },
+      "id": "Parse_Assist",
+      "name": "Parse JSON (Assist)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [850, 150]
+    },
+    {
+      "parameters": {
+        "responseMode": "lastNode"
+      },
+      "id": "Respond_Assist",
+      "name": "Respond (Assist)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1150, 150]
+    },
+
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "prioritizeTasks"
+      },
+      "id": "Webhook_Prioritize",
+      "name": "Webhook (Prioritize)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 400]
+    },
+    {
+      "parameters": {
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSyDfJJ_zOvIH7hs7-Ny3KQWgfhwNEb78Ums",
+        "method": "POST",
+        "sendBody": true,
+        "jsonParameters": true,
+        "bodyParametersJson": "{\n  \"contents\": [\n    {\n      \"role\": \"user\",\n      \"parts\": [\n        {\n          \"text\": \"Here is a list of tasks: {{$json.body.tasks.join(\\\", \\\")}}. Prioritize them and return JSON with prioritizedTasks array. Each task must have: task, priority (high|medium|low), rationale.\"\n        }\n      ]\n    }\n  ],\n  \"generationConfig\": { \"responseMimeType\": \"application/json\" }\n}"
+      },
+      "id": "Gemini_Prioritize",
+      "name": "Gemini API (Prioritize)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [550, 400]
+    },
+    {
+      "parameters": {
+        "functionCode": "return [{ json: JSON.parse(items[0].json.candidates[0].content.parts[0].text) }];"
+      },
+      "id": "Parse_Prioritize",
+      "name": "Parse JSON (Prioritize)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [850, 400]
+    },
+    {
+      "parameters": {
+        "responseMode": "lastNode"
+      },
+      "id": "Respond_Prioritize",
+      "name": "Respond (Prioritize)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1150, 400]
+    }
+  ],
+  "connections": {
+    "Webhook_Assist": {
+      "main": [[{ "node": "Gemini API (Assist)", "type": "main", "index": 0 }]]
+    },
+    "Gemini_Assist": {
+      "main": [[{ "node": "Parse JSON (Assist)", "type": "main", "index": 0 }]]
+    },
+    "Parse_Assist": {
+      "main": [[{ "node": "Respond (Assist)", "type": "main", "index": 0 }]]
+    },
+
+    "Webhook_Prioritize": {
+      "main": [
+        [{ "node": "Gemini API (Prioritize)", "type": "main", "index": 0 }]
+      ]
+    },
+    "Gemini_Prioritize": {
+      "main": [
+        [{ "node": "Parse JSON (Prioritize)", "type": "main", "index": 0 }]
+      ]
+    },
+    "Parse_Prioritize": {
+      "main": [[{ "node": "Respond (Prioritize)", "type": "main", "index": 0 }]]
+    }
+  }
+}

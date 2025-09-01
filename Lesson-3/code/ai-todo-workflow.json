@@ -1,0 +1,66 @@
+{
+  "name": "AI To-Do Assist",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "assistTask"
+      },
+      "id": "Webhook_Trigger",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSyDfJJ_zOvIH7hs7-Ny3KQWgfhwNEb78Ums",
+        "method": "POST",
+        "sendBody": true,
+        "jsonParameters": true,
+        "options": {},
+        "bodyParametersJson": "={\n  \"contents\": [\n    {\n      \"role\": \"user\",\n      \"parts\": [\n        { \"text\": \"Task: {{$json[\\\"body\\\"][\\\"task\\\"]}}\\nReturn JSON with clarified task, subtasks, priority (high|medium|low), estimated time in minutes, suggested due date, tags, and next action.\" }\n      ]\n    }\n  ],\n  \"generationConfig\": {\n    \"responseMimeType\": \"application/json\"\n  }\n}"
+      },
+      "id": "Gemini_Request",
+      "name": "Gemini API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "return [{ json: JSON.parse(items[0].json.candidates[0].content.parts[0].text) }];"
+      },
+      "id": "Parse_JSON",
+      "name": "Parse JSON",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [750, 300]
+    },
+    {
+      "parameters": {},
+      "id": "Respond",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [950, 300]
+    }
+  ],
+  "connections": {
+    "Webhook_Trigger": {
+      "main": [
+        [{ "node": "Gemini API", "type": "main", "index": 0 }]
+      ]
+    },
+    "Gemini_Request": {
+      "main": [
+        [{ "node": "Parse JSON", "type": "main", "index": 0 }]
+      ]
+    },
+    "Parse_JSON": {
+      "main": [
+        [{ "node": "Respond to Webhook", "type": "main", "index": 0 }]
+      ]
+    }
+  }
+}
